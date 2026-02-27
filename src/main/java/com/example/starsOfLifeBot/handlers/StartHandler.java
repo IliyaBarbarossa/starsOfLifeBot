@@ -48,6 +48,7 @@ public class StartHandler implements BotMessageHandler {
                 .resizeKeyboard(true)
                 .keyboardRow(new KeyboardRow("Анкета"))
                 .keyboardRow(new KeyboardRow("Обратиться к звездам"))
+                .keyboardRow(new KeyboardRow("Кармическая задача"))
                 .build());
         return message;
     }

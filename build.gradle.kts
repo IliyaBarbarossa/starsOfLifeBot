@@ -39,6 +39,10 @@ dependencies {
 	annotationProcessor ("org.projectlombok:lombok:1.18.32")
 
 
+	implementation("org.flywaydb:flyway-core")
+	runtimeOnly("org.flywaydb:flyway-database-postgresql")
+
+
 }
 
 tasks.withType<Test> {

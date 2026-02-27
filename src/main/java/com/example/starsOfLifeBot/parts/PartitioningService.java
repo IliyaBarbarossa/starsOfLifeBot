@@ -42,7 +42,7 @@ public class PartitioningService {
         String getAllPartitions = "SELECT * FROM pg_partition_tree('first.prognoz')";
         List<String> query = jdbcTemplate.query(getAllPartitions, (rs, num) -> rs.getString(1));
         String sql = query.stream()
-                .filter("first.prognoz"::equals)
+//                .filter("first.prognoz"::equals)
                 .filter(s -> s.contains("_"))
                 .map(s -> s.split("_", 2)[1])
                 .map(s -> LocalDate.of(Integer.parseInt(s.substring(0, 4)),
