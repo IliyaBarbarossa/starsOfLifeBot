@@ -26,6 +26,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -40,7 +41,7 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
     private final IiServise iiServise;
     private final BotMessageDispatcher botMessageDispatcher;
 
-    public StarsBot(@Value("${tg.api.token}") String token, TelegramClient telegramClient, BotPersonRepa botPersonRepa, BotPrognozRepa botPrognozRepa, IiServise iiServise, BotMessageDispatcher botMessageDispatcher,BotZadiakRepa botZadiakRepa) {
+    public StarsBot(@Value("${tg.api.token}") String token, TelegramClient telegramClient, BotPersonRepa botPersonRepa, BotPrognozRepa botPrognozRepa, IiServise iiServise, BotMessageDispatcher botMessageDispatcher, BotZadiakRepa botZadiakRepa) {
         this.token = token;
         this.botMessageDispatcher = botMessageDispatcher;
         this.telegramClient = telegramClient;
@@ -72,7 +73,7 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                     String date = now.format(formatter);
 
-                    Person us = new Person(update.getMessage().getFrom().getId(), update.getMessage().getFrom().getUserName(), update.getMessage().getFrom().getFirstName(), update.getMessage().getFrom().getLastName(), null, date, RegistrationProcess.NAME, null,update.getMessage().getChatId() );
+                    Person us = new Person(update.getMessage().getFrom().getId(), update.getMessage().getFrom().getUserName(), update.getMessage().getFrom().getFirstName(), update.getMessage().getFrom().getLastName(), null, date, RegistrationProcess.NAME, null, update.getMessage().getChatId());
                     botPersonRepa.save(us);
                 }
                 handlerName = "start";
@@ -82,19 +83,19 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
                 } else
                     handlerName = "stars";
             } else if (update.getMessage().getText().equals("Кармическая задача")) {
-                    handlerName = "Karma";
+                handlerName = "Karma";
             } else if (update.getMessage().getText().equals("Анкета")) {
                 handlerName = "profil";
             } else if (update.getMessage().getText().equals("admin47")) {
                 handlerName = "admin";
-            }else if (update.getMessage().getText().equals("Изменить Анкету")) {
+            } else if (update.getMessage().getText().equals("Изменить Анкету")) {
                 Person person = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
                 person.setRegistrationProcess(RegistrationProcess.NAME);
                 botPersonRepa.save(person);
                 handlerName = "start";
-            }else if (update.getMessage().getText().equals("Назад")) {
+            } else if (update.getMessage().getText().equals("Назад")) {
                 handlerName = "start";
-            }else if (isValidDate(update.getMessage().getText())) {
+            } else if (isValidDate(update.getMessage().getText())) {
                 if (botPersonRepa.findById(update.getMessage().getFrom().getId()).get().getRegistrationProcess() != RegistrationProcess.BIRTH_DATE) {
                     handlerName = "delite";
                 } else {
@@ -103,7 +104,7 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
                     LocalDate parse = LocalDate.parse(update.getMessage().getText(), formatter);
                     p.setBithday(parse);
                     p.setRegistrationProcess(RegistrationProcess.COMPLETE);
-                    Zadiak zadiak = new Zadiak(update.getMessage().getFrom().getId(),zodiak(parse));
+                    Zadiak zadiak = new Zadiak(update.getMessage().getFrom().getId(), zodiak(parse));
                     botPersonRepa.save(p);
                     botZadiakRepa.save(zadiak);
                     handlerName = "start";
@@ -124,15 +125,13 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
             try {
                 if (apiMessage instanceof SendMessage sendMessage) {
                     telegramClient.execute(sendMessage);
-                }
-                else if (apiMessage instanceof SendPhoto sendPhoto) {
+                } else if (apiMessage instanceof SendPhoto sendPhoto) {
                     telegramClient.execute(sendPhoto);
                 }
 
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
-
 
 
         }
@@ -160,43 +159,34 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
         }
     }
 
-    public static String zodiak(LocalDate parse){
+    public static String zodiak(LocalDate parse) {
         int year = parse.getYear();
-        if(parse.isBefore(LocalDate.parse("19.01."+year))){
+
+        if (parse.isBefore(LocalDate.of(year, Month.JANUARY, 19))) {
             return "Козерог";
-        } else if (parse.isBefore(LocalDate.parse("18.02."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.FEBRUARY, 18))) {
             return "Водолей";
-        }
-        else if (parse.isBefore(LocalDate.parse("20.03."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.MARCH, 20))) {
             return "Рыбы";
-        }
-        else if (parse.isBefore(LocalDate.parse("19.04."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.APRIL, 19))) {
             return "Овен";
-        }
-        else if (parse.isBefore(LocalDate.parse("20.05."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.MAY, 20))) {
             return "Телец";
-        }
-        else if (parse.isBefore(LocalDate.parse("20.06."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.JUNE, 20))) {
             return "Близнецы";
-        }
-        else if (parse.isBefore(LocalDate.parse("22.07."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.JULY, 22))) {
             return "Рак";
-        }
-        else if (parse.isBefore(LocalDate.parse("22.08."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.AUGUST, 22))) {
             return "Лев";
-        }
-        else if (parse.isBefore(LocalDate.parse("22.09."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.SEPTEMBER, 22))) {
             return "Дева";
-        }else if (parse.isBefore(LocalDate.parse("22.10."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.OCTOBER, 22))) {
             return "Весы";
-        }
-        else if (parse.isBefore(LocalDate.parse("21.11."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.NOVEMBER, 21))) {
             return "Скорпион";
-        }
-        else if (parse.isBefore(LocalDate.parse("21.12."+year))){
+        } else if (parse.isBefore(LocalDate.of(year, Month.DECEMBER, 21))) {
             return "Стрелец";
-        }
-        else {
+        } else {
             return "Козерог";
         }
     }
