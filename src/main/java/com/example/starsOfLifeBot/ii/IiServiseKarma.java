@@ -9,6 +9,7 @@ import com.example.starsOfLifeBot.model.second.ZPrognoz;
 import com.example.starsOfLifeBot.model.second.Zadiak;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -35,7 +36,8 @@ public class IiServiseKarma {
 
 
     private static final String API_URL = "https://ask.chadgpt.ru/api/public/gpt-5";
-    private static final String API_KEY = "chad-7c7e799b20ae450482f747f7c03d440d16x22us4";
+    @Value("${gpt.api.token}")
+    private String API_KEY;
 
     public void getAIZadiakResponse() {
 
@@ -45,8 +47,6 @@ public class IiServiseKarma {
 
 
             for (int i = 0; i < list.size(); i++) {
-
-
                 // Формируем JSON-запрос
                 JSONObject requestJson = new JSONObject();
                 requestJson.put("message", "создай кармическую задачу на день длинной до 15 слов для " + list.get(i).getZnak());
@@ -79,7 +79,7 @@ public class IiServiseKarma {
 
                 JSONObject respJson = new JSONObject(response.toString());
                 String response1 = respJson.getString("response");
-                ZPrognoz prognoz = new ZPrognoz(list.get(i).getZnak(), response1);
+                ZPrognoz prognoz = new ZPrognoz(list.get(i).getZnak(), response1, LocalDate.now());
                 zPrognozRepa.save(prognoz);
 
             }

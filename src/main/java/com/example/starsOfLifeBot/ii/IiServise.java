@@ -6,6 +6,7 @@ import com.example.starsOfLifeBot.model.first.Person;
 import com.example.starsOfLifeBot.model.second.Prognoz;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -23,9 +24,9 @@ public class IiServise {
     private BotPersonRepa botPersonRepa;
     @Autowired
     private BotPrognozRepa botPrognozRepa;
-
-    private static final String API_URL = "https://ask.chadgpt.ru/api/public/gpt-5";
-    private static final String API_KEY = "chad-7c7e799b20ae450482f747f7c03d440d16x22us4";
+    private static final  String API_URL = "https://ask.chadgpt.ru/api/public/gpt-5";
+    @Value("${gpt.api.token}")
+    private String API_KEY;
     public String getAIResponse(Update update) {
 
         try {

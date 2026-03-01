@@ -3,12 +3,16 @@ package com.example.starsOfLifeBot.handlers;
 import com.example.starsOfLifeBot.baza.BotPersonRepa;
 import com.example.starsOfLifeBot.baza.BotZPrognozRepa;
 import com.example.starsOfLifeBot.baza.BotZadiakRepa;
+import com.example.starsOfLifeBot.bot.StarsBot;
 import com.example.starsOfLifeBot.dispetcherAndInterfase.BotMessageHandler;
 import com.example.starsOfLifeBot.ii.IiServiseKarma;
+import com.example.starsOfLifeBot.model.second.ZPrognoz;
 import com.example.starsOfLifeBot.model.second.Zadiak;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -33,6 +37,8 @@ public class KarmaHandler implements BotMessageHandler {
     public String getName() {
         return "Karma";
     }
+    @Value("${srarsbot.sendPhoto}")
+    private boolean sendPhoto = false;
 
     @Override
     public PartialBotApiMethod<Message> handle(Update update) {
@@ -42,60 +48,33 @@ public class KarmaHandler implements BotMessageHandler {
         String caption = "";
         if (!botZadiakRepa.existsById(id)) {
             LocalDate bithday = botPersonRepa.findById(id).get().getBithday();
-            botZadiakRepa.save(new Zadiak(id, zodiak(bithday)));
+            botZadiakRepa.save(new Zadiak(id, StarsBot.zodiak(bithday)));
         }
-        if (botZPrognozRepa.findById(botZadiakRepa.findById(id).get().getZadiak()).get().getPrognoz() == null) {
+        ZPrognoz zPrognoz = botZPrognozRepa.findById(botZadiakRepa.findById(id).get().getZadiak()).get();
+        if (zPrognoz.getPrognoz() == null || zPrognoz.getDate().isBefore(LocalDate.now())) {
             iiServiseKarma.getAIZadiakResponse();
         } else {
             caption = " Твоя кармическая задача: " + botZPrognozRepa.findById(botZadiakRepa.findById(id).get().getZadiak()).get().getPrognoz();
         }
 
+        if(sendPhoto) {
+            SendPhoto.SendPhotoBuilder<?, ?> photoBuilder = SendPhoto.builder()
+                    .chatId(chatId)
+                    .caption(caption + "\n" + "/start");
 
 
-        SendPhoto.SendPhotoBuilder<?, ?> photoBuilder = SendPhoto.builder()
-                .chatId(chatId)
-                .caption(caption + "\n" + "/start");
-
-        try (InputStream is = getClass().getClassLoader()
-                .getResourceAsStream("photo/chad_ecc9af62b6064313a83cc243404e2ec2_3.png")) {
+            InputStream is = getClass().getClassLoader()
+                    .getResourceAsStream("photo/chad_ecc9af62b6064313a83cc243404e2ec2_3.png");
             InputFile photo = new InputFile().setMedia(is, "stars");
             photoBuilder.photo(photo);
 
-        } catch (IOException e) {
-            //ignore
-        }
 
-        return photoBuilder.build();
-    }
-
-    public static String zodiak(LocalDate parse) {
-        int year = parse.getYear();
-        if (parse.isBefore(LocalDate.parse("19.01." + year))) {
-            return "Козерог";
-        } else if (parse.isBefore(LocalDate.parse("18.02." + year))) {
-            return "Водолей";
-        } else if (parse.isBefore(LocalDate.parse("20.03." + year))) {
-            return "Рыбы";
-        } else if (parse.isBefore(LocalDate.parse("19.04." + year))) {
-            return "Овен";
-        } else if (parse.isBefore(LocalDate.parse("20.05." + year))) {
-            return "Телец";
-        } else if (parse.isBefore(LocalDate.parse("20.06." + year))) {
-            return "Близнецы";
-        } else if (parse.isBefore(LocalDate.parse("22.07." + year))) {
-            return "Рак";
-        } else if (parse.isBefore(LocalDate.parse("22.08." + year))) {
-            return "Лев";
-        } else if (parse.isBefore(LocalDate.parse("22.09." + year))) {
-            return "Дева";
-        } else if (parse.isBefore(LocalDate.parse("22.10." + year))) {
-            return "Весы";
-        } else if (parse.isBefore(LocalDate.parse("21.11." + year))) {
-            return "Скорпион";
-        } else if (parse.isBefore(LocalDate.parse("21.12." + year))) {
-            return "Стрелец";
-        } else {
-            return "Козерог";
+            return photoBuilder.build();
+        }else {
+            return SendMessage.builder()
+                    .chatId(chatId)
+                    .text(caption + "\n" + "/start")
+                    .build();
         }
     }
 }
