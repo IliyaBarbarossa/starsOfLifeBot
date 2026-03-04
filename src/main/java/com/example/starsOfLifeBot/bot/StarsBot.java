@@ -24,11 +24,21 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 
+import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Date;
+import java.util.List;
+
+
+import org.geonames.Toponym;
+import org.geonames.WebService;
+import org.geonames.ToponymSearchCriteria;
+import org.geonames.ToponymSearchResult;
 
 @Component
 public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
@@ -67,14 +77,8 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
             String handlerName = null;
 
             if (update.getMessage().getText().equals("/start")) {
-                // перенести в хэгндлер
                 if (!botPersonRepa.existsById(update.getMessage().getFrom().getId())) {
-                    LocalDateTime now = LocalDateTime.now();
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    String date = now.format(formatter);
-
-                    Person us = new Person(update.getMessage().getFrom().getId(), update.getMessage().getFrom().getUserName(), update.getMessage().getFrom().getFirstName(), update.getMessage().getFrom().getLastName(), null, date, RegistrationProcess.NAME, null, update.getMessage().getChatId());
-                    botPersonRepa.save(us);
+                    newPerson(update);
                 }
                 handlerName = "start";
             } else if (update.getMessage().getText().equals("Обратиться к звездам")) {
@@ -89,34 +93,26 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
             } else if (update.getMessage().getText().equals("admin47")) {
                 handlerName = "admin";
             } else if (update.getMessage().getText().equals("Изменить Анкету")) {
-                Person person = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
-                person.setRegistrationProcess(RegistrationProcess.NAME);
-                botPersonRepa.save(person);
+                updateAnketa(update);
                 handlerName = "start";
             } else if (update.getMessage().getText().equals("Назад")) {
                 handlerName = "start";
             } else if (isValidDate(update.getMessage().getText())) {
-                if (botPersonRepa.findById(update.getMessage().getFrom().getId()).get().getRegistrationProcess() != RegistrationProcess.BIRTH_DATE) {
-                    handlerName = "delite";
-                } else {
-                    Person p = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-                    LocalDate parse = LocalDate.parse(update.getMessage().getText(), formatter);
-                    p.setBithday(parse);
-                    p.setRegistrationProcess(RegistrationProcess.COMPLETE);
-                    Zadiak zadiak = new Zadiak(update.getMessage().getFrom().getId(), zodiak(parse));
-                    botPersonRepa.save(p);
-                    botZadiakRepa.save(zadiak);
-                    handlerName = "start";
+                handlerName = saveBithday(update);
+            } else if (isValidDateTime(update.getMessage().getText())) {
+                handlerName = saveBithdayTime(update);
+            } else if (botPersonRepa.findById(update.getMessage().getFrom().getId()).get().getRegistrationProcess() == RegistrationProcess.SITY) {
+                try {
+                    saveSityy(update);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
+                handlerName = "start";
             } else {
                 if (botPersonRepa.findById(update.getMessage().getFrom().getId()).get().getRegistrationProcess() != RegistrationProcess.NAME) {
                     handlerName = "delite";
                 } else {
-                    Person p = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
-                    p.setName(update.getMessage().getText());
-                    p.setRegistrationProcess(RegistrationProcess.BIRTH_DATE);
-                    botPersonRepa.save(p);
+                    saveName(update);
                     handlerName = "start";
                 }
             }
@@ -159,6 +155,16 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
         }
     }
 
+    public static boolean isValidDateTime(String input) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        try {
+            LocalTime time = LocalTime.parse(input, formatter);
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     public static String zodiak(LocalDate parse) {
         int year = parse.getYear();
 
@@ -190,5 +196,101 @@ public class StarsBot implements SpringLongPollingBot, LongPollingSingleThreadUp
             return "Козерог";
         }
     }
+
+    public void newPerson(Update update) {
+        Person us = new Person(
+                update.getMessage().getFrom().getId(),
+                update.getMessage().getFrom().getUserName(),
+                update.getMessage().getFrom().getFirstName(),
+                update.getMessage().getFrom().getLastName(),
+                new Date(),
+                null,
+                null,
+                RegistrationProcess.NAME,
+                update.getMessage().getChatId(),
+                null, null);
+        botPersonRepa.save(us);
+    }
+
+    public void updateAnketa(Update update) {
+        Person person = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
+        person.setRegistrationProcess(RegistrationProcess.NAME);
+        person.setTime(null);
+        person.setName(null);
+        person.setBithday(null);
+        person.setSity(null);
+        botPersonRepa.save(person);
+
+    }
+
+    public String saveBithday(Update update) {
+        if (botPersonRepa.findById(update.getMessage().getFrom().getId()).get().getRegistrationProcess() != RegistrationProcess.BIRTH_DATE) {
+            return "delite";
+        } else {
+            Person p = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+            LocalDate parse = LocalDate.parse(update.getMessage().getText(), formatter);
+            p.setBithday(parse);
+            p.setRegistrationProcess(RegistrationProcess.BIRTH_TIME);
+            Zadiak zadiak = new Zadiak(update.getMessage().getFrom().getId(), zodiak(parse));
+            botPersonRepa.save(p);
+            botZadiakRepa.save(zadiak);
+            return "start";
+        }
+    }
+
+
+    public void saveSityy(Update update) throws Exception {
+        Person p = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
+        String text = update.getMessage().getText();
+        String s = serchSity(text);
+        if (!s.isEmpty()) {
+
+            p.setSity(s);
+            p.setRegistrationProcess(RegistrationProcess.COMPLETE);
+            botPersonRepa.save(p);
+        }
+
+    }
+
+    public String serchSity(String args) throws Exception {
+
+        WebService.setUserName("iliya168");
+        ToponymSearchCriteria searchCriteria = new ToponymSearchCriteria();
+        searchCriteria.setQ(args);
+        searchCriteria.setMaxRows(1);
+        ToponymSearchResult result = WebService.search(searchCriteria);
+        List<Toponym> toponyms = result.getToponyms();
+        if (toponyms.size() > 0) {
+            Toponym toponym = toponyms.get(0);
+            return toponym.getName() + ", " + toponym.getCountryName();
+        } else {
+            return "";
+        }
+
+    }
+
+
+    public String saveBithdayTime(Update update) {
+        if (botPersonRepa.findById(update.getMessage().getFrom().getId()).get().getRegistrationProcess() != RegistrationProcess.BIRTH_TIME) {
+            return "delite";
+        } else {
+            Person p = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+            LocalTime parse = LocalTime.parse(update.getMessage().getText(), formatter);
+            p.setTime(parse);
+            p.setRegistrationProcess(RegistrationProcess.SITY);
+            botPersonRepa.save(p);
+            return "start";
+        }
+    }
+
+    public void saveName(Update update) {
+        Person p = botPersonRepa.findById(update.getMessage().getFrom().getId()).get();
+        p.setName(update.getMessage().getText());
+        p.setRegistrationProcess(RegistrationProcess.BIRTH_DATE);
+        botPersonRepa.save(p);
+    }
+
 
 }

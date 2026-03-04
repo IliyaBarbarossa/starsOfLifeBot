@@ -43,7 +43,10 @@ dependencies {
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
 
-}
+	implementation("org.geonames:geonames-ws-client:1.1.17")}
+
+
+
 
 tasks.withType<Test> {
 	useJUnitPlatform()

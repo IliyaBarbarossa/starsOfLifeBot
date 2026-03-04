@@ -2,6 +2,7 @@ package com.example.starsOfLifeBot.handlers;
 
 import com.example.starsOfLifeBot.baza.BotPersonRepa;
 import com.example.starsOfLifeBot.baza.BotPrognozRepa;
+import com.example.starsOfLifeBot.baza.BotZadiakRepa;
 import com.example.starsOfLifeBot.dispetcherAndInterfase.BotMessageHandler;
 import com.example.starsOfLifeBot.model.first.Person;
 import com.example.starsOfLifeBot.model.first.RegistrationProcess;
@@ -15,6 +16,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 public class ProfilHandler implements BotMessageHandler {
     @Autowired
     private BotPersonRepa botPersonRepa;
+    @Autowired
+    private BotZadiakRepa botZadiakRepa;
     @Override
     public String getName() {
         return "profil";
@@ -25,7 +28,7 @@ public class ProfilHandler implements BotMessageHandler {
         Long chatId = update.getMessage().getChatId();
         Long id = update.getMessage().getFrom().getId();
         Person person = botPersonRepa.findById(id).get();
-        String text = "Имя: "+person.getName()+"\n"+"Дата рождения: "+person.getBithday();
+        String text = "Имя: "+person.getName()+"\n"+"Дата рождения: "+person.getBithday()+"\n"+"Знак зодиака: "+botZadiakRepa.findById(person.getTgid()).get().getZadiak()+"\n"+"Город рождения: "+person.getSity();
         SendMessage message = SendMessage.builder()
                 .chatId(id)
                 .text(text)

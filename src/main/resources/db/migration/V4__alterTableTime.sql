@@ -1,0 +1,4 @@
+
+
+ALTER TABLE persons
+ADD COLUMN IF NOT EXISTS time TIME;

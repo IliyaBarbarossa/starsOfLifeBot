@@ -39,6 +39,22 @@ public class StartHandler implements BotMessageHandler {
                     .build();
             return message;
         }
+        else if (botPersonRepa.findById(id).get().getRegistrationProcess() == RegistrationProcess.BIRTH_TIME) {
+            text = "Введите время рождения в формате ЧЧ:MM, например 08:15.\nЕсли не уверены, укажите ближайшее время";
+            SendMessage message = SendMessage.builder()
+                    .chatId(chatId)
+                    .text(text)
+                    .build();
+            return message;
+        }else if (botPersonRepa.findById(id).get().getRegistrationProcess() == RegistrationProcess.SITY) {
+            text = "Введите название города рождения";
+            SendMessage message = SendMessage.builder()
+                    .chatId(chatId)
+                    .text(text)
+                    .build();
+            return message;
+        }
+
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
                 .text(text)
